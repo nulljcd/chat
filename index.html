@@ -11,8 +11,8 @@
     }
 
     @font-face {
-      font-family: 'font';
-      src: url('pico-8-mono-upper.ttf');
+      font-family: "font";
+      src: url("font.ttf");
     }
 
     body {
@@ -34,9 +34,8 @@
       border-top: 2px solid #a198a9;
       height: 28px;
       font-family: Monospace;
-      font-size: 16px;
+      font-size: 10px;
       font-family: font;
-      line-height: 24px;
     }
 
     #chatContainer {
@@ -47,11 +46,10 @@
 
     .message {
       color: #a198a9;
-      padding: 15px;
       font-family: Monospace;
-      font-size: 16px;
+      font-size: 10px;
       font-family: font;
-      line-height: 24px;
+      padding-bottom: 10px;
     }
   </style>
 </head>
@@ -64,118 +62,144 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-app.js";
     import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-auth.js";
-    import { getDatabase, ref, set, update, onDisconnect, remove, onValue, onChildAdded, onChildRemoved } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-database.js";
+    import { getDatabase, ref, set, update, onDisconnect, remove, onChildAdded, onChildRemoved, onValue } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-database.js";
 
-    let firebaseConfig = {
-      apiKey: "AIzaSyDBKLagVjAqJymEkLMKaJvfbep_TUPD9S0",
-      authDomain: "project-7461927070501805311.firebaseapp.com",
-      databaseURL: "https://project-7461927070501805311-default-rtdb.firebaseio.com",
-      projectId: "project-7461927070501805311",
-      storageBucket: "project-7461927070501805311.appspot.com",
-      messagingSenderId: "117048132520",
-      appId: "1:117048132520:web:62f45feb23dede3aae939d"
+    const firebaseConfig = {
+      apiKey: "AIzaSyBp-w0JGa73L945T9sKIQIgP9wd8e559SA",
+      authDomain: "project-267124582841727081.firebaseapp.com",
+      databaseURL: "https://project-267124582841727081-default-rtdb.firebaseio.com",
+      projectId: "project-267124582841727081",
+      storageBucket: "project-267124582841727081.appspot.com",
+      messagingSenderId: "634287973087",
+      appId: "1:634287973087:web:e06cd828ebf2e22d873f6a"
     };
+
+    // let firebaseConfig = {
+    //   apiKey: "AIzaSyDBKLagVjAqJymEkLMKaJvfbep_TUPD9S0",
+    //   authDomain: "project-7461927070501805311.firebaseapp.com",
+    //   databaseURL: "https://project-7461927070501805311-default-rtdb.firebaseio.com",
+    //   projectId: "project-7461927070501805311",
+    //   storageBucket: "project-7461927070501805311.appspot.com",
+    //   messagingSenderId: "117048132520",
+    //   appId: "1:117048132520:web:62f45feb23dede3aae939d"
+    // };
 
     let app = initializeApp(firebaseConfig);
     let database = getDatabase(app);
     let auth = getAuth();
 
-    let userId, userRef, usersRef;
+    let usersRef;
+    let userId, userRef, userName;
+    let lastUsersData = {};
 
+    signInAnonymously(auth);
     onAuthStateChanged(auth, user => {
       if (user) {
-        usersRef = ref(database, `users`);
+        usersRef = ref(database, "users");
 
         userId = user.uid;
         userRef = ref(database, `users/${userId}`);
-
+        userName = `user${Math.floor(Math.random() * 10)}${Math.floor(Math.random() * 10)}${Math.floor(Math.random() * 10)}`;
         set(userRef, {
           id: userId,
+          name: userName,
           message: "",
-          isSender: false
+          sendFlag: false
         });
-
         onDisconnect(userRef).remove();
 
         onChildAdded(usersRef, (snapshot) => {
           let userData = snapshot.val();
-
-          let message = document.createElement("div");
-          message.className = "message";
-          if (userData.id == userId)
-            message.innerText = `-> ${userData.id.slice(0, 6)} (You)`;
-          else
-            message.innerText = `-> ${userData.id.slice(0, 6)}`;
-          document.querySelector("#chat").appendChild(message);
+          pushMessage(`-> ${userData.name}`);
+          lastUsersData[userData.id] = userData;
         });
-
         onChildRemoved(usersRef, (snapshot) => {
           let userData = snapshot.val();
-
-          let message = document.createElement("div");
-          message.className = "message";
-
-          if (userData.id == userId) {
-            message.innerText = `<- ${userData.id.slice(0, 6)} (You)`;
-            set(userRef, {
-              id: userId,
-              message: "",
-              isSender: false
-            });
-          } else
-            message.innerText = `<- ${userData.id.slice(0, 6)}`;
-
-          document.querySelector("#chat").appendChild(message);
+          pushMessage(`<- ${userData.name}`);
+          delete lastUsersData[userData.id];
         });
-
         onValue(usersRef, (snapshot) => {
-          for (let key in snapshot.val()) {
-            let userData = snapshot.val()[key];
-
-            if (userData.isSender) {
-              let message = document.createElement("div");
-              message.className = "message";
-
-              if (key == userId) {
-                message.innerText = `${userData.id.slice(0, 6)} (You) -> ${userData.message}`;
-
-                update(userRef, {
-                  isSender: false
-                });
-              } else
-                message.innerText = `${userData.id.slice(0, 6)} -> ${userData.message}`;
-
-              document.querySelector("#chat").appendChild(message);
-              document.querySelector("#chat").scrollIntoView({ block: "end" });
+          let usersData = snapshot.val();
+          for (let key in usersData) {
+            let userData = usersData[key];
+            if (lastUsersData[key].sendFlag != userData.sendFlag) {
+              pushMessage(`${userData.name} -> ${userData.message}`);
+              lastUsersData[key] = userData;
+              break;
             }
           }
         });
-      }
-      window.onkeydown = e => {
-        if (e.code == "Enter") {
-          e.preventDefault();
 
-          let input = document.querySelector("#input").value;
-          if (input.length > 0) {
-            switch (input) {
-              case "/clear":
-                document.querySelector("#chat").innerHTML = "";
-                break;
-              default:
+        window.onkeydown = e => {
+          document.querySelector('#input').focus();
+          if (e.code == "Enter") {
+            e.preventDefault();
+
+            if (lastUsersData[userId] == null)
+              set(userRef, {
+                id: userId,
+                name: userName,
+                message: "",
+                sendFlag: false
+              });
+
+            let input = document.querySelector("#input").value;
+            if (input.length > 0) {
+              if (input[0] != "/")
                 update(userRef, {
                   message: input,
-                  isSender: true
+                  sendFlag: !lastUsersData[userId].sendFlag
                 });
-                break;
+              else {
+                let command = input.substring(1).split(" ");
+
+                switch (command[0]) {
+                  case "help":
+                    pushMessage(`commands:
+                      clear chat: /clear
+                      list all users: /users
+                      change name: /name {name}`);
+                    break;
+                  case "clear":
+                    document.querySelector("#chat").innerHTML = "";
+                    break;
+                  case "users":
+                    for (let key in lastUsersData)
+                      pushMessage(`-> ${lastUsersData[key].name}`);
+                    break;
+                  case "name":
+                    if (command[1] != null && command[1].length > 1) {
+                      userName = command[1];
+                      update(userRef, {
+                        name: userName
+                      });
+                      pushMessage(`changed name to: ${userName}`);
+                      break;
+                    }
+                  default:
+                    update(userRef, {
+                      message: input,
+                      sendFlag: !lastUsersData[userId].sendFlag
+                    });
+                    break;
+                }
+              }
+              document.querySelector("#input").value = "";
             }
           }
-
-          document.querySelector("#input").value = "";
-        }
-      };
+        };
+      }
     });
 
-    signInAnonymously(auth);
+    function pushMessage(input) {
+      let message = document.createElement("div");
+      message.className = "message";
+      message.innerText = input;
+      document.querySelector("#chat").appendChild(message);
+      document.querySelector("#chat").scrollIntoView({
+        block: "end"
+      });
+    }
   </script>
 </body>
 
