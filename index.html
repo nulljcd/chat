@@ -64,25 +64,15 @@
     import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-auth.js";
     import { getDatabase, ref, set, update, onDisconnect, remove, onChildAdded, onChildRemoved, onValue } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-database.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyBp-w0JGa73L945T9sKIQIgP9wd8e559SA",
-      authDomain: "project-267124582841727081.firebaseapp.com",
-      databaseURL: "https://project-267124582841727081-default-rtdb.firebaseio.com",
-      projectId: "project-267124582841727081",
-      storageBucket: "project-267124582841727081.appspot.com",
-      messagingSenderId: "634287973087",
-      appId: "1:634287973087:web:e06cd828ebf2e22d873f6a"
+    let firebaseConfig = {
+      apiKey: "AIzaSyDBKLagVjAqJymEkLMKaJvfbep_TUPD9S0",
+      authDomain: "project-7461927070501805311.firebaseapp.com",
+      databaseURL: "https://project-7461927070501805311-default-rtdb.firebaseio.com",
+      projectId: "project-7461927070501805311",
+      storageBucket: "project-7461927070501805311.appspot.com",
+      messagingSenderId: "117048132520",
+      appId: "1:117048132520:web:62f45feb23dede3aae939d"
     };
-
-    // let firebaseConfig = {
-    //   apiKey: "AIzaSyDBKLagVjAqJymEkLMKaJvfbep_TUPD9S0",
-    //   authDomain: "project-7461927070501805311.firebaseapp.com",
-    //   databaseURL: "https://project-7461927070501805311-default-rtdb.firebaseio.com",
-    //   projectId: "project-7461927070501805311",
-    //   storageBucket: "project-7461927070501805311.appspot.com",
-    //   messagingSenderId: "117048132520",
-    //   appId: "1:117048132520:web:62f45feb23dede3aae939d"
-    // };
 
     let app = initializeApp(firebaseConfig);
     let database = getDatabase(app);
