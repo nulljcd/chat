@@ -54,7 +54,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-app.js";
     import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-auth.js";
-    import { getDatabase, ref, set, update, onDisconnect, remove, onValue } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-database.js";
+    import { getDatabase, ref, set, onDisconnect, remove, onValue } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-database.js";
 
     let firebaseConfig = {
       apiKey: "AIzaSyDBKLagVjAqJymEkLMKaJvfbep_TUPD9S0",
@@ -71,7 +71,7 @@
     let auth = getAuth();
 
     let usersRef;
-    let userId, userRef, userName, userRoom;
+    let userId, userRef, userName, userRoom, userSendFlag;
     let lastUsersData = {};
 
     onAuthStateChanged(auth, user => {
@@ -82,8 +82,16 @@
         userRef = ref(database, `users/${userId}`);
         userName = `user${Math.floor(Math.random() * 10)}${Math.floor(Math.random() * 10)}${Math.floor(Math.random() * 10)}`;
         userRoom = "main";
+        userSendFlag = false;
 
-        setUserData();
+        set(userRef, {
+          id: userId,
+          name: userName,
+          message: "",
+          sendFlag: userSendFlag,
+          room: userRoom,
+        });
+
         onDisconnect(userRef).remove();
 
         handleServer();
@@ -109,16 +117,6 @@
         ---------------
 
         entered room: main`);
-    }
-
-    function setUserData() {
-      set(userRef, {
-        id: userId,
-        name: userName,
-        message: "",
-        sendFlag: false,
-        room: userRoom,
-      });
     }
 
     function pushMessage(input) {
@@ -171,16 +169,18 @@
         if (e.code == "Enter") {
           e.preventDefault();
 
-          if (lastUsersData[userId] == null)
-            setUserData();
-
           let input = document.querySelector("#input").value;
           if (input.length > 0) {
-            if (input[0] != "/")
-              update(userRef, {
+            if (input[0] != "/") {
+              userSendFlag = !userSendFlag;
+              set(userRef, {
+                id: userId,
+                name: userName,
                 message: input,
-                sendFlag: !lastUsersData[userId].sendFlag
+                sendFlag: userSendFlag,
+                room: userRoom,
               });
+            }
             else {
               let command = input.substring(1).split(" ");
 
@@ -198,8 +198,12 @@
                 case "name":
                   if (command[1] != null && command[1].length > 0) {
                     userName = command[1];
-                    update(userRef, {
-                      name: userName
+                    set(userRef, {
+                      id: userId,
+                      name: userName,
+                      message: "",
+                      sendFlag: userSendFlag,
+                      room: userRoom,
                     });
                     pushMessage(`changed name to: ${userName}`);
                     break;
@@ -208,15 +212,23 @@
                   if (command[1] != null) {
                     userRoom = command[1];
                     pushMessage(`entered room: ${userRoom}`);
-                    update(userRef, {
-                      room: userRoom
+                    set(userRef, {
+                      id: userId,
+                      name: userName,
+                      message: "",
+                      sendFlag: userSendFlag,
+                      room: userRoom,
                     });
                     break;
                   }
                 default:
-                  update(userRef, {
+                  userSendFlag = !userSendFlag;
+                  set(userRef, {
+                    id: userId,
+                    name: userName,
                     message: input,
-                    sendFlag: !lastUsersData[userId].sendFlag
+                    sendFlag: userSendFlag,
+                    room: userRoom,
                   });
                   break;
               }
