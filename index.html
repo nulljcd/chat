@@ -97,27 +97,23 @@
         handleServer();
         handleInput();
 
-        welcome();
+        pushMessage(`---------------
+          welcome to the chat!
+
+          commands:
+          clear the chat: "/clear"
+          list users in room: "/users"
+          change name: "/name {name}"
+          enter/create room: "/room {room}"
+
+          Note: this project is still a work in progress.
+          ---------------
+
+          ---- entered room: main`);
       }
     });
 
     signInAnonymously(auth);
-
-    function welcome() {
-      pushMessage(`---------------
-        welcome to the chat!
-
-        commands:
-        clear the chat: "/clear"
-        list users in room: "/users"
-        change name: "/name {name}"
-        enter/create room: "/room {room}"
-
-        Note: this project is still a work in progress.
-        ---------------
-
-        ---- entered room: main`);
-    }
 
     function pushMessage(input) {
       let message = document.createElement("div");
