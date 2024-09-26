@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <title>chat</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
   <style>
     html {
       height: 100%;
@@ -116,7 +116,7 @@
         Note: this project is still a work in progress.
         ---------------
 
-        entered room: main`);
+        ---- entered room: main`);
     }
 
     function pushMessage(input) {
@@ -189,7 +189,7 @@
                   document.querySelector("#chat").innerHTML = "";
                   break;
                 case "users":
-                  pushMessage("users:");
+                  pushMessage("---- users:");
                   for (let key in lastUsersData) {
                     let lastUserData = lastUsersData[key];
                     pushMessage(`-> ${lastUserData.name}`);
@@ -205,13 +205,13 @@
                       sendFlag: userSendFlag,
                       room: userRoom,
                     });
-                    pushMessage(`changed name to: ${userName}`);
+                    pushMessage(`---- changed name to: ${userName}`);
                     break;
                   }
                 case "room":
                   if (command[1] != null) {
                     userRoom = command[1];
-                    pushMessage(`entered room: ${userRoom}`);
+                    pushMessage(`---- entered room: ${userRoom}`);
                     set(userRef, {
                       id: userId,
                       name: userName,
