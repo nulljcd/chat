@@ -100,13 +100,13 @@
         pushMessage(`---------------
           welcome to the chat!
 
-          commands:
-          clear the chat: "/clear"
-          list users in room: "/users"
-          change name: "/name {name}"
-          enter/create room: "/room {room}"
+          Commands:
+          - clear the chat: /clear
+          - list users in room: /users
+          - change name: /name yourNameHere
+          - enter/create room: /room yourRoomHere
 
-          Note: this project is still a work in progress.
+          Created by nulljcd
           ---------------
 
           ---- entered room: main`);
@@ -181,6 +181,9 @@
               let command = input.substring(1).split(" ");
 
               switch (command[0]) {
+                case "freaky":
+                  pushMessage("Ryan did this to me.");
+                  break;
                 case "clear":
                   document.querySelector("#chat").innerHTML = "";
                   break;
