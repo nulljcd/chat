@@ -104,7 +104,8 @@
     function pushMessage(input) {
       let message = document.createElement("pre");
       message.className = "message";
-      message.innerText = input;
+      message.innerText = `
+      ${input}`;
       document.querySelector("#chat").appendChild(message);
       document.querySelector("#chat").scrollIntoView({
         block: "end"
