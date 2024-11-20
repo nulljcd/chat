@@ -102,7 +102,7 @@
     signInAnonymously(auth);
 
     function pushMessage(input) {
-      let message = document.createElement("div");
+      let message = document.createElement("pre");
       message.className = "message";
       message.innerText = input;
       document.querySelector("#chat").appendChild(message);
