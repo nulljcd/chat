@@ -104,8 +104,7 @@
     function pushMessage(input) {
       let message = document.createElement("pre");
       message.className = "message";
-      message.innerText = `
-      ${input}`;
+      message.innerText = input;
       document.querySelector("#chat").appendChild(message);
       document.querySelector("#chat").scrollIntoView({
         block: "end"
@@ -123,7 +122,7 @@
             if (lastUserData == null || userData.room != lastUserData.room)
               pushMessage(`-> ${userData.name}`);
             else if (lastUserData.sendFlag != userData.sendFlag)
-              pushMessage(`${userData.name} -> ${userData.message}`);
+              pushMessage(`${userData.name} ->${"\n"}${userData.message}`);
         }
 
         for (let key in lastUsersData) {
