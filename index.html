@@ -72,7 +72,7 @@
 
     fireSocket.onInitialize = () => fireSocket.connect();
     fireSocket.onConnection = (userId) => push(`-> ${userId.substring(0, 6)}`);
-    fireSocket.onDisconnection = (user) => push(`<- ${userId.substring(0, 6)}`);
+    fireSocket.onDisconnection = (userId) => push(`<- ${userId.substring(0, 6)}`);
     fireSocket.onBroadcast = (userId, data) => push(`${userId.substring(0, 6)} ->${"\n"}${data}`);
 
     window.onkeydown = e => {
