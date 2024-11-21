@@ -11,57 +11,56 @@
     }
 
     body {
-      background: #1f1c23;
       margin: 0;
       height: 100%;
-    }
-
-    #input {
       background: #1f1c23;
       color: #a198a9;
-      margin: 0;
-      padding: 0;
-      border: 0;
-      outline: 0;
-      width: 100%;
-      resize: none;
-      display: block;
-      border-top: 2px solid #a198a9;
-      height: 28px;
-      font-family: Monospace;
+      font-family: monospace;
       font-size: 16px;
     }
 
-    #chatContainer {
+    #consoleContainer {
       height: calc(100% - 30px);
-      width: 100%;
       overflow-y: scroll;
     }
 
-    .message {
+    #console {
+      margin: 0;
+    }
+
+    #input {
+      display: block;
+      margin: 0;
+      outline: 0;
+      padding: 0;
+      border: 0;
+      height: 30px;
+      width: 100%;
+      background: #1f1c23;
       color: #a198a9;
-      font-family: Monospace;
+      font-family: monospace;
       font-size: 16px;
+      resize: none;
     }
   </style>
 </head>
 
 <body>
-  <div id="chatContainer">
-    <div id="chat"></div>
+  <div id="consoleContainer">
+    <pre id="console"></pre>
   </div>
-  <textarea id="input"></textarea>
+  <textarea id="input" autocomplete="false" spellcheck="false"></textarea>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-app.js";
     import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-auth.js";
-    import { getDatabase, ref, set, onDisconnect, remove, onValue } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-database.js";
+    import { getDatabase, ref, set, update, onDisconnect, remove, onValue } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-database.js";
 
     let firebaseConfig = {
       apiKey: "AIzaSyDBKLagVjAqJymEkLMKaJvfbep_TUPD9S0",
       authDomain: "project-7461927070501805311.firebaseapp.com",
       databaseURL: "https://project-7461927070501805311-default-rtdb.firebaseio.com",
       projectId: "project-7461927070501805311",
-      storageBucket: "project-7461927070501805311.appspot.com",
+      storageBucket: "project-7461927070501805311.firebasestorage.app",
       messagingSenderId: "117048132520",
       appId: "1:117048132520:web:62f45feb23dede3aae939d"
     };
@@ -70,45 +69,36 @@
     let database = getDatabase(app);
     let auth = getAuth();
 
-    let usersRef;
-    let userId, userRef, userName, userRoom, userSendFlag;
+    let userId, usersRef, userRef, userName, userBroadcastFlag;
     let lastUsersData = {};
+
+    function push(value) {
+      document.querySelector("#console").innerText += `${value}${"\n"}`;
+      document.querySelector("#console").scrollIntoView({
+        block: "end"
+      });
+    }
 
     onAuthStateChanged(auth, user => {
       if (user) {
-        usersRef = ref(database, "users");
-
         userId = user.uid;
+        usersRef = ref(database, "users");
         userRef = ref(database, `users/${userId}`);
-        userName = `user${Math.floor(Math.random() * 10)}${Math.floor(Math.random() * 10)}${Math.floor(Math.random() * 10)}`;
-        userRoom = "main";
-        userSendFlag = false;
-
-        set(userRef, {
-          id: userId,
-          name: userName,
-          message: "",
-          sendFlag: userSendFlag,
-          room: userRoom,
-        });
-
-        onDisconnect(userRef).remove();
-
+        userBroadcastFlag = false;
+        setupUser();
         handleServer();
         handleInput();
       }
     });
-
     signInAnonymously(auth);
 
-    function pushMessage(input) {
-      let message = document.createElement("pre");
-      message.className = "message";
-      message.innerText = input;
-      document.querySelector("#chat").appendChild(message);
-      document.querySelector("#chat").scrollIntoView({
-        block: "end"
+    function setupUser() {
+      set(userRef, {
+        id: userId,
+        broadcastData: "",
+        broadcastFlag: userBroadcastFlag
       });
+      onDisconnect(userRef).remove();
     }
 
     function handleServer() {
@@ -117,31 +107,30 @@
         for (let key in usersData) {
           let userData = usersData[key];
           let lastUserData = lastUsersData[key];
-
-          if (userData.room == userRoom)
-            if (lastUserData == null || userData.room != lastUserData.room)
-              pushMessage(`-> ${userData.name}`);
-            else if (lastUserData.sendFlag != userData.sendFlag)
-              pushMessage(`${userData.name} ->${"\n"}${userData.message}`);
+          if (!lastUserData)
+            push(`-> ${userData.id.substring(0, 6)}`);
+          else if (lastUserData.broadcastFlag != userData.broadcastFlag)
+            push(`${userData.id.substring(0, 6)} ->${"\n"}${userData.broadcastData}`);
         }
-
         for (let key in lastUsersData) {
           let userData = usersData[key];
           let lastUserData = lastUsersData[key];
-
-          if (lastUserData.room == userRoom)
-            if (userData == null || userData.room != userRoom)
-              pushMessage(`<- ${lastUserData.name}`);
+          if (userData == null)
+            push(`<- ${lastUserData.id.substring(0, 6)}`);
         }
-
         lastUsersData = {};
-
         for (let key in usersData) {
           let userData = usersData[key];
-
-          if (userData.room == userRoom)
-            lastUsersData[key] = userData;
+          lastUsersData[key] = userData;
         }
+      });
+    }
+
+    function broadcast(broadcastData) {
+      userBroadcastFlag = !userBroadcastFlag;
+      update(userRef, {
+        broadcastData: broadcastData,
+        broadcastFlag: userBroadcastFlag
       });
     }
 
@@ -150,73 +139,11 @@
         document.querySelector("#input").focus();
         if (e.code == "Enter") {
           e.preventDefault();
-
-          let input = document.querySelector("#input").value;
-          if (input.length > 0) {
-            if (input[0] != "/") {
-              userSendFlag = !userSendFlag;
-              set(userRef, {
-                id: userId,
-                name: userName,
-                message: input,
-                sendFlag: userSendFlag,
-                room: userRoom,
-              });
-            }
-            else {
-              let command = input.substring(1).split(" ");
-
-              switch (command[0]) {
-                case "clear":
-                  document.querySelector("#chat").innerHTML = "";
-                  break;
-                case "users":
-                  pushMessage("---- users:");
-                  for (let key in lastUsersData) {
-                    let lastUserData = lastUsersData[key];
-                    pushMessage(`-> ${lastUserData.name}`);
-                  }
-                  break;
-                case "name":
-                  if (command[1] != null && command[1].length > 0) {
-                    userName = command[1];
-                    set(userRef, {
-                      id: userId,
-                      name: userName,
-                      message: "",
-                      sendFlag: userSendFlag,
-                      room: userRoom,
-                    });
-                    pushMessage(`---- changed name to: ${userName}`);
-                    break;
-                  }
-                case "room":
-                  if (command[1] != null) {
-                    userRoom = command[1];
-                    pushMessage(`---- entered room: ${userRoom}`);
-                    set(userRef, {
-                      id: userId,
-                      name: userName,
-                      message: "",
-                      sendFlag: userSendFlag,
-                      room: userRoom,
-                    });
-                    break;
-                  }
-                default:
-                  userSendFlag = !userSendFlag;
-                  set(userRef, {
-                    id: userId,
-                    name: userName,
-                    message: input,
-                    sendFlag: userSendFlag,
-                    room: userRoom,
-                  });
-                  break;
-              }
-            }
-            document.querySelector("#input").value = "";
-          }
+          let value = document.querySelector("#input").value;
+          if (value.length > 0)
+            broadcast(value);
+          document.querySelector("#input").value = "";
+          document.querySelector("#input").blur();
         }
       };
     }
