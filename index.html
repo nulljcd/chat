@@ -11,20 +11,22 @@
     }
 
     body {
-      margin: 0;
       height: 100%;
-      background: #1f1c23;
-      color: #a198a9;
+      display: flex;
+      justify-content: center;
+      align-items: center;
       font-family: monospace;
       font-size: 16px;
     }
 
-    #consoleContainer {
-      height: calc(100% - 30px);
+    #messagesContainer {
+      width: 300px;
+      height: 300px;
+      border: 2px solid gray;
       overflow-y: scroll;
     }
 
-    #console {
+    #messages {
       margin: 0;
     }
 
@@ -33,11 +35,12 @@
       margin: 0;
       outline: 0;
       padding: 0;
-      border: 0;
-      height: 30px;
-      width: 100%;
-      background: #1f1c23;
-      color: #a198a9;
+      padding-top: 5px;
+      padding-bottom: 5px;
+      border-radius: 0;
+      border: 2px solid gray;
+      height: 20px;
+      width: 300px;
       font-family: monospace;
       font-size: 16px;
       resize: none;
@@ -46,16 +49,18 @@
 </head>
 
 <body>
-  <div id="consoleContainer">
-    <pre id="console"></pre>
+  <div id="mainContainer">
+    <div id="messagesContainer">
+      <pre id="messages"></pre>
+    </div>
+    <textarea id="input"></textarea>
   </div>
-  <textarea id="input" autocomplete="false" spellcheck="false"></textarea>
   <script type="module">
     import FireSocket from "https://nulljcd.github.io/firesocket/firesocket.js";
 
-    function push(value) {
-      document.querySelector("#console").innerText += `${value}${"\n"}`;
-      document.querySelector("#console").scrollIntoView({
+    function pushMessage(message) {
+      document.querySelector("#messages").innerText += `${message}${"\n"}`;
+      document.querySelector("#messages").scrollIntoView({
         block: "end"
       });
     }
@@ -65,27 +70,28 @@
       authDomain: "project-7461927070501805311.firebaseapp.com",
       databaseURL: "https://project-7461927070501805311-default-rtdb.firebaseio.com",
       projectId: "project-7461927070501805311",
-      storageBucket: "project-7461927070501805311.appspot.com",
+      storageBucket: "project-7461927070501805311.firebasestorage.app",
       messagingSenderId: "117048132520",
       appId: "1:117048132520:web:62f45feb23dede3aae939d"
     });
 
-    fireSocket.onInitialize = () => fireSocket.connect();
-    fireSocket.onConnection = (userId) => push(`-> ${userId.substring(0, 6)}`);
-    fireSocket.onDisconnection = (userId) => push(`<- ${userId.substring(0, 6)}`);
-    fireSocket.onBroadcast = (userId, data) => push(`${userId.substring(0, 6)} ->${"\n"}${data}`);
+    fireSocket.initialize().then(() => {
+      window.onkeydown = e => {
+        document.querySelector("#input").focus();
+        if (e.code == "Enter") {
+          e.preventDefault();
+          let broadcastData = document.querySelector("#input").value;
+          if (broadcastData.length > 0)
+            fireSocket.broadcast(broadcastData);
+          document.querySelector("#input").value = "";
+          document.querySelector("#input").blur();
+        }
+      };
+    });
 
-    window.onkeydown = e => {
-      document.querySelector("#input").focus();
-      if (e.code == "Enter") {
-        e.preventDefault();
-        let value = document.querySelector("#input").value;
-        if (value.length > 0)
-          fireSocket.broadcast(value);
-        document.querySelector("#input").value = "";
-        document.querySelector("#input").blur();
-      }
-    };
+    fireSocket.onConnection = (userId) => pushMessage(`-> ${userId.substring(0, 6)}`);
+    fireSocket.onDisconnection = (userId) => pushMessage(`<- ${userId.substring(0, 6)}`);
+    fireSocket.onBroadcast = (userId, data) => pushMessage(`${userId.substring(0, 6)} ->${"\n"}${data}`);
   </script>
 </body>
 
