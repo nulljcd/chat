@@ -1,2 +1,2 @@
 # chat
-A simple chat room. Uses my firesocket library.
+A simple chat room that uses my firesocket library.
